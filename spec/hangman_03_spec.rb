@@ -45,7 +45,7 @@ describe "Phase III" do
 
         guesser.handle_response("r", [0])
 
-        expect(guesser.candidate_words.sort).to eq(["reel","real"].sort)
+        expect(guesser.candidate_words.sort).to eq(["reel","real","rear"].sort)
       end
     end
 
