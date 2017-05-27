@@ -1,117 +1,102 @@
+require_relative 'human_player'
+require_relative 'computer_player'
+
 class Hangman
   attr_reader :guesser, :referee, :board
 
-  def initialize(players = {})
-    defaults = {
-      guesser: 'guesser',
-      referee: 'referee'
-    }
-    players = defaults.merge(players)
-    @players = players
+  def initialize(players, mistakes)
     @guesser = players[:guesser]
     @referee = players[:referee]
-    @board = Array.new(0)
+    @guess_no = 0
+    @mistakes = mistakes
+    @answer = ''
   end
 
   def setup
-    secret_word_length = self.referee.pick_secret_word
-    self.guesser.register_secret_length(secret_word_length)
-    @board = Array.new(secret_word_length)
+    @answer = @referee.pick_secret_word
+    @guesser.register_secret_length(@answer.length)
   end
 
   def take_turn
-    letter_guess = self.guesser.guess
-    correct_indices = self.referee.check_guess(letter_guess)
-    self.update_board(correct_indices, letter_guess)
-    self.guesser.handle_response(letter_guess, correct_indices)
+    display
+    @guess_no += 1
+    guess = @guesser.guess
+    correct_guess?(guess)
+    if guess.length == 1 && ('a'..'z').include?(guess)
+      correct_indices = @referee.check_guess(@answer, guess)
+      update_board(correct_indices, guess)
+      @guesser.handle_response(guess, correct_indices)
+    else
+      if guess == @answer
+        @guesser.board = @answer.chars
+        @guess_no -= 1
+        puts "#{@guesser.name} guessed the word!!!"
+      end
+    end
   end
 
   def update_board(correct_indices, letter_guess)
-    correct_indices.each { |idx| @board[idx] = letter_guess }
+    correct_indices.each { |idx| @guesser.board[idx] = letter_guess }
+  end
+
+  def correct_guess?(guess)
+    if @answer.include?(guess)
+      @guess_no -= 1
+      puts 'Correct guess!'
+    else
+      puts 'Incorrect guess.'
+    end
+  end
+
+  def over?
+    return true if @guesser.board.none? { |ch| ch == '_'}
+    return true if @guess_no > @mistakes
+    false
+  end
+
+  def conclude
+    if @guesser.board.none? { |ch| ch == '_'}
+      puts "#{@guesser.name} guessed #{@answer} with #{@guess_no} mistakes!"
+      puts "#{@guesser.name} wins!"
+    else
+      puts "You have 0 mistake(s) left."
+      puts "Sorry, the answer was #{@answer}. #{@referee.name} wins."
+    end
+  end
+
+  def display
+    puts "Board: #{@guesser.board.join('  ')}"
+    puts "You have #{@mistakes - @guess_no + 1} mistake(s) left."
+    puts "Guessed Letters: #{@guesser.guessed_letters.sort.join('  ')}\n\n"
+  end
+
+  def play
+    setup
+    until over?
+      take_turn
+    end
+    conclude
   end
 
   if __FILE__ == $PROGRAM_NAME
-    puts 'Hello'
-  end
-
-end
-
-class HumanPlayer
-
-  attr_accessor :name
-
-  def initialize(name)
-    @name = name
-  end
-
-  def guess(board)
-  end
-
-end
-
-class ComputerPlayer
-
-  attr_accessor :dictionary, :name
-
-  def initialize(dictionary, name)
-    @name = name
-    @dictionary = dictionary
-    @word_length = 3
-    @letter_index_hash = {}
-    @board = []
-  end
-
-  def pick_secret_word
-    self.dictionary[rand(dictionary.count)].length
-  end
-
-  def guess(board)
-    words = self.candidate_words
-    counter_hash = Hash.new(0)
-    words.each do |word|
-      word.each_char do |letter|
-        counter_hash[letter] += 1 unless board.include?(letter)
-      end
+    print 'Player one name?: '
+    p1 = HumanPlayer.new(gets.chomp)
+    p2 = ComputerPlayer.new('King of Hangman')
+    print 'Would you like to guess or referee? g / r : '
+    if gets.chomp == 'g'
+      players = {
+        guesser: p1,
+        referee: p2
+      }
+    else
+      players = {
+        guesser: p2,
+        referee: p1
+      }
     end
-    max_val = counter_hash.values.max
-    max_keyval = counter_hash.select { |k, v| v == max_val }
-    max_keyval.keys[0]
-  end
-
-  def check_guess(letter)
-    word = self.dictionary[rand(dictionary.count)]
-    arr = []
-    word.chars.each_with_index do |ch, idx|
-      arr << idx if ch == letter
-    end
-    arr
-  end
-
-  def register_secret_length(length)
-    @word_length = length
-    @board = Array.new(length)
-  end
-
-  def handle_response(letter, indicies)
-    @letter_index_hash[letter] = indicies
-    indicies.each do |idx|
-      @board[idx] = letter
-    end
-  end
-
-  def candidate_words
-    ok_words = dictionary.select { |word| word.length == @word_length }
-    ok_words.each do |word|
-      @letter_index_hash.keys.each do |letter|
-        unless @letter_index_hash[letter].all? { |idx| word[idx] == letter }
-          ok_words.delete(word)
-        end
-        if @letter_index_hash[letter].empty?
-          ok_words.reject! { |word| word.include?(letter) }
-        end
-      end
-    end
-    ok_words
+    print 'How many mistakes? Recommended 10 : '
+    mistakes = gets.chomp.to_i
+    Hangman.new(players, mistakes).play
   end
 
 end
