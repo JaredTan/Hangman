@@ -50,7 +50,7 @@ class ComputerPlayer
     @letter_index_hash[letter] = indicies
     indicies.each { |idx| @board[idx] = letter }
     @guessed_letters << letter
-    @incorrect_letters << letter if indicies.length.zero?
+    @incorrect_letters << letter if indicies.empty?
   end
 
   def candidate_words(answer_length)

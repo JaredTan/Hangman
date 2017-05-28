@@ -2,7 +2,7 @@ require_relative 'human_player'
 require_relative 'computer_player'
 
 class Hangman
-  attr_reader :guesser, :referee, :board
+  attr_reader :guesser, :referee
 
   def initialize(players, mistakes)
     @guesser = players[:guesser]
@@ -24,6 +24,10 @@ class Hangman
     guess = @guesser.guess(@answer.length)
     puts "Guess: #{guess}"
     correct_guess?(guess)
+    results_guess?(guess)
+  end
+
+  def results_guess?(guess)
     if guess.length == 1 && ('a'..'z').include?(guess)
       correct_indices = @referee.check_guess(@answer, guess)
       update_board(guess, correct_indices)

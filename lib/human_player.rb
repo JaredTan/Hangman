@@ -1,8 +1,6 @@
-
-
 class HumanPlayer
 
-  attr_accessor :name, :board, :guessed_letters, :incorrect_letters
+  attr_accessor :name, :dictionary, :board, :guessed_letters, :incorrect_letters
 
   def initialize(name)
     @name = name
