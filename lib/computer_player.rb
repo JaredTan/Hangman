@@ -1,13 +1,16 @@
 class ComputerPlayer
 
-  attr_accessor :name, :dictionary, :board, :guessed_letters
+  attr_accessor :name, :dictionary, :board, :guessed_letters, :incorrect_letters
 
   def initialize(name)
     @name = name
     @dictionary = []
     File.readlines('dictionary.txt').each { |i| @dictionary << i }
+    @dictionary.map! { |word| word.delete("\n") }
     @letter_index_hash = {}
     @board = []
+    @guessed_letters = []
+    @incorrect_letters = []
   end
 
   def pick_secret_word
@@ -16,17 +19,19 @@ class ComputerPlayer
     chars.join
   end
 
-  def guess
-    words = candidate_words
+  def guess(answer_length)
+    words = candidate_words(answer_length)
     counter_hash = Hash.new(0)
     words.each do |word|
       word.each_char do |letter|
         counter_hash[letter] += 1 unless self.board.include?(letter)
       end
     end
+    p counter_hash
     max_val = counter_hash.values.max
     max_keyval = counter_hash.select { |_, v| v == max_val }
-    max_keyval.keys[0]
+    p max_keyval.keys
+    max_keyval.keys[rand(max_keyval.keys.length)]
   end
 
   def check_guess(answer, guess)
@@ -44,23 +49,26 @@ class ComputerPlayer
   def handle_response(letter, indicies)
     @letter_index_hash[letter] = indicies
     indicies.each { |idx| @board[idx] = letter }
-    # no need to include a guessed words instance variable
-    # because candidate_words accounts for it in the hash already.
+    @guessed_letters << letter
+    @incorrect_letters << letter if indicies.length.zero?
   end
 
-  def candidate_words
-    ok_words = @dictionary.select { |word| word.length == @word_length }
+  def candidate_words(answer_length)
+    ok_words = @dictionary.select { |word| word.length == answer_length }
+    @incorrect_letters.each do |ch|
+      ok_words.reject! { |word| word.include?(ch) }
+    end
+    better_words = ok_words.dup
     ok_words.each do |word|
+    @letter_index_hash.keys
       @letter_index_hash.keys.each do |letter|
         unless @letter_index_hash[letter].all? { |idx| word[idx] == letter }
-          ok_words.delete(word)
-        end
-        if @letter_index_hash[letter].empty?
-          ok_words.reject! { |i| i.include?(letter) }
+          better_words.delete(word)
         end
       end
     end
-    ok_words
+    p better_words
+    better_words
   end
 
 end

@@ -15,32 +15,36 @@ class Hangman
   def setup
     @answer = @referee.pick_secret_word
     @guesser.register_secret_length(@answer.length)
+    puts "The word is #{@answer.length} characters long."
   end
 
   def take_turn
     display
     @guess_no += 1
-    guess = @guesser.guess
+    guess = @guesser.guess(@answer.length)
+    puts "Guess: #{guess}"
     correct_guess?(guess)
     if guess.length == 1 && ('a'..'z').include?(guess)
       correct_indices = @referee.check_guess(@answer, guess)
-      update_board(correct_indices, guess)
+      update_board(guess, correct_indices)
       @guesser.handle_response(guess, correct_indices)
     else
       if guess == @answer
         @guesser.board = @answer.chars
         @guess_no -= 1
         puts "#{@guesser.name} guessed the word!!!"
+      else
+        @guesser.incorrect_letters << guess
       end
     end
   end
 
-  def update_board(correct_indices, letter_guess)
+  def update_board(letter_guess, correct_indices)
     correct_indices.each { |idx| @guesser.board[idx] = letter_guess }
   end
 
   def correct_guess?(guess)
-    if @answer.include?(guess)
+    if @answer.include?(guess) && guess.length == 1 || guess.length == @answer.length
       @guess_no -= 1
       puts 'Correct guess!'
     else
@@ -56,18 +60,18 @@ class Hangman
 
   def conclude
     if @guesser.board.none? { |ch| ch == '_'}
-      puts "#{@guesser.name} guessed #{@answer} with #{@guess_no} mistakes!"
+      puts "#{@guesser.name} guessed #{@answer} with #{@guess_no} mistakes."
       puts "#{@guesser.name} wins!"
     else
-      puts "You have 0 mistake(s) left."
       puts "Sorry, the answer was #{@answer}. #{@referee.name} wins."
     end
   end
 
   def display
     puts "Board: #{@guesser.board.join('  ')}"
-    puts "You have #{@mistakes - @guess_no + 1} mistake(s) left."
-    puts "Guessed Letters: #{@guesser.guessed_letters.sort.join('  ')}\n\n"
+    puts "#{@guesser.name}, you have #{@mistakes - @guess_no} mistake(s) left."
+    puts "This is your last guess!" if @mistakes - @guess_no == 0
+    puts "Incorrect Letters: #{@guesser.incorrect_letters.sort.join('  ')}\n\n"
   end
 
   def play
@@ -82,20 +86,21 @@ class Hangman
     print 'Player one name?: '
     p1 = HumanPlayer.new(gets.chomp)
     p2 = ComputerPlayer.new('King of Hangman')
-    print 'Would you like to guess or referee? g / r : '
-    if gets.chomp == 'g'
-      players = {
-        guesser: p1,
-        referee: p2
-      }
-    else
+    print 'Would you like to guess or choose a word for the computer? g / c : '
+    if gets.chomp == 'c'
       players = {
         guesser: p2,
         referee: p1
       }
+    else
+      players = {
+        guesser: p1,
+        referee: p2
+      }
     end
     print 'How many mistakes? Recommended 10 : '
     mistakes = gets.chomp.to_i
+    puts "\n\n"
     Hangman.new(players, mistakes).play
   end
 

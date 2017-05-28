@@ -2,15 +2,19 @@
 
 class HumanPlayer
 
-  attr_accessor :name, :board, :guessed_letters
+  attr_accessor :name, :board, :guessed_letters, :incorrect_letters
 
   def initialize(name)
     @name = name
-    @board = Array.new(0)
+    @board = []
+    @dictionary = []
+    File.readlines('dictionary.txt').each { |i| @dictionary << i }
+    @dictionary.map! { |word| word.delete("\n") }
     @guessed_letters = []
+    @incorrect_letters = []
   end
 
-  def guess
+  def guess(_)
     print 'Guess a letter or the word: '
     input = gets.chomp.downcase
     until valid_guess?(input)
@@ -22,6 +26,7 @@ class HumanPlayer
 
   def valid_guess?(input)
     return false if @guessed_letters.include?(input)
+    return false unless input.chars.all? { |ch| ('a'..'z').include?(ch) }
     true
   end
 
@@ -47,6 +52,7 @@ class HumanPlayer
   def handle_response(letter, indicies)
     indicies.each { |idx| @board[idx] = letter }
     @guessed_letters << letter
+    @incorrect_letters << letter unless @board.include?(letter)
   end
 
   def check_guess(answer, guess)
