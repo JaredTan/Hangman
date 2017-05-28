@@ -68,7 +68,7 @@ class ComputerPlayer
       end
     end
     p better_words
-    better_words
+    @dictionary = better_words
   end
 
 end

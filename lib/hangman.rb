@@ -64,7 +64,7 @@ class Hangman
 
   def conclude
     if @guesser.board.none? { |ch| ch == '_'}
-      puts "#{@guesser.name} guessed #{@answer} with #{@guess_no} mistakes."
+      puts "#{@guesser.name} guessed #{@answer} with #{@guess_no} mistake(s)."
       puts "#{@guesser.name} wins!"
     else
       puts "Sorry, the answer was #{@answer}. #{@referee.name} wins."
